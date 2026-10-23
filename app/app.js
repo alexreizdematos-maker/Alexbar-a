@@ -265,6 +265,7 @@
   function desenhar() {
     const total = gastosDoMes.reduce((soma, g) => soma + Number(g.valor || 0), 0);
     $("total-mes").textContent = moeda.format(total);
+    $("media-dia").textContent = "Média de " + moeda.format(total / new Date().getDate()) + " por dia";
     desenharBarras();
     desenharLista();
   }
