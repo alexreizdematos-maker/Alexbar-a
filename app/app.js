@@ -107,10 +107,10 @@
     $("botao-criar").addEventListener("click", criarConta);
     $("botao-sair").addEventListener("click", sair);
     $("form-gasto").addEventListener("submit", lancarGasto);
-    $("botao-enviar").addEventListener("click", avisarAssistente);
-    $("botao-foto").addEventListener("click", avisarAssistente);
+    $("botao-enviar").addEventListener("click", enviarFrase);
+    $("botao-foto").addEventListener("click", escolherFoto);
     $("assistente-texto").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") avisarAssistente();
+      if (e.key === "Enter") enviarFrase();
     });
 
     // O setTimeout evita travar o cliente do Supabase dentro deste aviso.
@@ -437,10 +437,109 @@
     }
   }
 
-  // ---------- Assistente (chega na sexta) ----------
+  // ---------- Assistente ----------
 
-  function avisarAssistente() {
-    mostrar($("msg-assistente"), "O assistente chega na sexta.", "info");
+  const LADO_MAXIMO_FOTO = 1600;
+  let assistenteOcupado = false;
+
+  function travarAssistente(travar) {
+    assistenteOcupado = travar;
+    $("botao-enviar").disabled = travar;
+    $("botao-foto").disabled = travar;
+  }
+
+  function enviarFrase() {
+    const mensagem = $("assistente-texto").value.trim();
+    if (!mensagem) {
+      mostrar($("msg-assistente"), "Escreva o gasto, por exemplo: mercado 50 hoje.");
+      $("assistente-texto").focus();
+      return;
+    }
+    falarComAssistente({ mensagem }, "Pensando…");
+  }
+
+  function escolherFoto() {
+    if (assistenteOcupado) return;
+    const seletor = document.createElement("input");
+    seletor.type = "file";
+    seletor.accept = "image/*";
+    seletor.addEventListener("change", async () => {
+      const arquivo = seletor.files && seletor.files[0];
+      if (!arquivo) return;
+      try {
+        mostrar($("msg-assistente"), "Preparando a foto…", "info");
+        const imagem = await reduzirFoto(arquivo);
+        const mensagem = $("assistente-texto").value.trim();
+        await falarComAssistente({ mensagem, imagem, mime: "image/jpeg" }, "Lendo o cupom…");
+      } catch (erro) {
+        mostrar($("msg-assistente"), "Não deu para abrir esta foto. Tire outra e tente de novo.");
+      }
+    });
+    seletor.click();
+  }
+
+  // Reduz a foto no próprio aparelho (no máximo 1600 px, em JPEG) antes de enviar.
+  // A foto não é guardada: ela só existe na memória até a resposta chegar.
+  function reduzirFoto(arquivo) {
+    return new Promise((resolve, reject) => {
+      const endereco = URL.createObjectURL(arquivo);
+      const imagem = new Image();
+      imagem.onload = () => {
+        const escala = Math.min(1, LADO_MAXIMO_FOTO / Math.max(imagem.width, imagem.height));
+        const tela = document.createElement("canvas");
+        tela.width = Math.round(imagem.width * escala);
+        tela.height = Math.round(imagem.height * escala);
+        tela.getContext("2d").drawImage(imagem, 0, 0, tela.width, tela.height);
+        URL.revokeObjectURL(endereco);
+        resolve(tela.toDataURL("image/jpeg", 0.85).split(",")[1]);
+      };
+      imagem.onerror = () => {
+        URL.revokeObjectURL(endereco);
+        reject(new Error("imagem"));
+      };
+      imagem.src = endereco;
+    });
+  }
+
+  async function falarComAssistente(pedido, aguarde) {
+    if (assistenteOcupado) return;
+    const aviso = $("msg-assistente");
+    travarAssistente(true);
+    mostrar(aviso, aguarde, "info");
+    try {
+      const { data, error } = await cliente.auth.getSession();
+      if (error) throw error;
+      const token = data.session && data.session.access_token;
+      if (!token) throw new Error("session");
+
+      const resposta = await fetch("/api/assistente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ ...pedido, categorias: CATEGORIAS })
+      });
+
+      let corpo = {};
+      try { corpo = await resposta.json(); } catch (_e) { /* resposta sem JSON */ }
+
+      if (!resposta.ok) {
+        if (resposta.status === 404) {
+          mostrar(aviso, "O assistente ainda não está no ar. Publique o app na Netlify e tente de novo.");
+        } else {
+          mostrar(aviso, corpo.erro || "O assistente não respondeu. Espere um instante e tente de novo.");
+        }
+        return;
+      }
+
+      mostrar(aviso, corpo.resposta || "Pronto.", corpo.lancado ? "ok" : "info");
+      if (corpo.lancado) {
+        $("assistente-texto").value = "";
+        await carregarGastos();
+      }
+    } catch (erro) {
+      mostrar(aviso, traduzirErro(erro));
+    } finally {
+      travarAssistente(false);
+    }
   }
 
   iniciar();
