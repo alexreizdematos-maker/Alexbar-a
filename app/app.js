@@ -404,7 +404,7 @@
       const { error } = await cliente.from("gastos").insert({
         dono: usuario.id,
         data,
-        descricao: descricao || null,
+        descricao, // a coluna é obrigatória: vazia vai como texto vazio
         valor,
         categoria: categoriaEscolhida,
         origem: "manual"

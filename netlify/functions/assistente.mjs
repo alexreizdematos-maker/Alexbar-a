@@ -225,7 +225,8 @@ async function acaoRegistrar(token, usuario, args, categorias, hoje, origem) {
   }
   const categoria = categorias.includes(args.categoria) ? args.categoria : "Outros";
   const data = dataValida(args.data) ? args.data : hoje;
-  const descricao = String(args.descricao || "").trim().slice(0, 80) || null;
+  // A coluna descricao é obrigatória: vazia vai como texto vazio, nunca null.
+  const descricao = String(args.descricao || "").trim().slice(0, 80);
 
   await gravarGasto(token, { dono: usuario.id, data, descricao, valor, categoria, origem });
 
