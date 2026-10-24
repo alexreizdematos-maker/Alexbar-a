@@ -12,6 +12,7 @@
   let usuario = null;
   let categoriaEscolhida = null;
   let gastosDoMes = [];
+  let erroNaLista = false;
 
   // ---------- Datas ----------
 
@@ -221,6 +222,10 @@
 
   async function carregarGastos() {
     const [inicio, fim] = intervaloDoMes();
+    if (!gastosDoMes.length) {
+      $("lista-vazia").hidden = true;
+      mostrar($("msg-lista"), "Carregando seus gastos…", "info");
+    }
     try {
       const { data, error } = await cliente
         .from("gastos")
@@ -232,8 +237,10 @@
         .order("criado_em", { ascending: false });
       if (error) throw error;
       gastosDoMes = data || [];
+      erroNaLista = false;
       limpar($("msg-lista"));
     } catch (erro) {
+      erroNaLista = true;
       mostrar($("msg-lista"), "Não deu para carregar os gastos. " + traduzirErro(erro));
     }
     desenhar();
@@ -310,7 +317,8 @@
   function desenharLista() {
     const lista = $("lista");
     lista.replaceChildren();
-    $("lista-vazia").hidden = gastosDoMes.length > 0;
+    // Com erro, a frase de lista vazia poderia enganar: fica escondida.
+    $("lista-vazia").hidden = gastosDoMes.length > 0 || erroNaLista;
 
     gastosDoMes.forEach((gasto) => {
       const item = document.createElement("li");
@@ -542,5 +550,10 @@
     }
   }
 
-  iniciar();
+  // Um erro inesperado na abertura não pode deixar a tela presa em "Abrindo…".
+  try {
+    iniciar();
+  } catch (_erro) {
+    $("carregando").textContent = "Não foi possível abrir o app. Recarregue a página.";
+  }
 })();

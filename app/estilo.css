@@ -83,6 +83,7 @@ input {
   font-size: 16px; /* evita zoom automático no iPhone */
 }
 input:focus { outline: 2px solid var(--amarelo); outline-offset: 1px; }
+input::placeholder { color: #8f9bc0; }
 input[type="date"] { color-scheme: dark; }
 #valor { font-size: 1.6rem; font-weight: 700; }
 
@@ -102,16 +103,19 @@ input[type="date"] { color-scheme: dark; }
 .botao:disabled { opacity: 0.6; cursor: wait; }
 .botao.principal { background: var(--grena); }
 .botao.principal:active { background: #85003a; }
-.botao.secundario { background: transparent; border: 2px solid var(--azul); }
+.botao.secundario { background: transparent; border: 2px solid #4a86d0; }
 .botao.pequeno {
   width: auto;
-  min-height: 40px;
+  min-height: 44px;
+  min-width: 44px;
   margin: 0;
   padding: 0 16px;
   background: transparent;
   border: 1px solid var(--borda);
   font-weight: 600;
 }
+
+button:focus-visible, summary:focus-visible { outline: 3px solid var(--amarelo); outline-offset: 2px; }
 
 .linha-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .linha-botoes .botao { margin-top: 12px; }
@@ -169,7 +173,7 @@ input[type="date"] { color-scheme: dark; }
 
 .mais { margin-top: 12px; }
 .mais summary {
-  min-height: 40px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   color: var(--texto-suave);
@@ -220,7 +224,7 @@ input[type="date"] { color-scheme: dark; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.item-detalhe { font-size: 0.85rem; color: var(--texto-suave); }
+.item-detalhe { font-size: 0.9rem; color: var(--texto-suave); }
 .item-valor { font-weight: 700; white-space: nowrap; }
 .item-apagar {
   min-width: 44px;
@@ -229,7 +233,7 @@ input[type="date"] { color-scheme: dark; }
   border-radius: 10px;
   background: transparent;
   color: var(--erro);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
 }
 
