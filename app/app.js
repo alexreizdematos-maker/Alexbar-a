@@ -110,6 +110,7 @@
     $("form-gasto").addEventListener("submit", lancarGasto);
     $("botao-enviar").addEventListener("click", enviarFrase);
     $("botao-foto").addEventListener("click", escolherFoto);
+    prepararMicrofone();
     $("assistente-texto").addEventListener("keydown", (e) => {
       if (e.key === "Enter") enviarFrase();
     });
@@ -454,6 +455,81 @@
     assistenteOcupado = travar;
     $("botao-enviar").disabled = travar;
     $("botao-foto").disabled = travar;
+    $("botao-microfone").disabled = travar;
+  }
+
+  // ---------- Microfone ----------
+
+  let escuta = null;
+
+  function prepararMicrofone() {
+    const Reconhecimento = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Reconhecimento) {
+      $("botao-microfone").hidden = true;
+      $("dica-microfone").hidden = false;
+      return;
+    }
+    $("botao-microfone").addEventListener("click", () => alternarEscuta(Reconhecimento));
+  }
+
+  function marcarEscuta(ouvindo) {
+    const botao = $("botao-microfone");
+    botao.setAttribute("aria-pressed", ouvindo ? "true" : "false");
+    botao.setAttribute("aria-label", ouvindo ? "Parar de ouvir" : "Falar o gasto");
+  }
+
+  function fraseDoErroDeVoz(codigo) {
+    if (codigo === "not-allowed" || codigo === "service-not-allowed") {
+      return "Libere o microfone para este site nas configurações do navegador e tente de novo.";
+    }
+    if (codigo === "no-speech") return "Não ouvi nada. Toque no microfone e fale de novo.";
+    if (codigo === "audio-capture") return "Não achei um microfone. Confira o aparelho ou digite o gasto.";
+    if (codigo === "network") return "Sem internet. Confira a conexão e tente de novo.";
+    return "Não deu para ouvir. Toque no microfone e tente de novo, ou digite o gasto.";
+  }
+
+  function alternarEscuta(Reconhecimento) {
+    // Tocar de novo enquanto escuta para de ouvir.
+    if (escuta) {
+      escuta.stop();
+      return;
+    }
+    if (assistenteOcupado) return;
+
+    const aviso = $("msg-assistente");
+    const reconhecimento = new Reconhecimento();
+    reconhecimento.lang = "pt-BR";
+    reconhecimento.interimResults = false;
+    reconhecimento.continuous = false;
+    reconhecimento.maxAlternatives = 1;
+
+    let ouvido = "";
+    let erroDeVoz = null;
+    reconhecimento.onresult = (evento) => {
+      ouvido = Array.from(evento.results).map((r) => r[0].transcript).join(" ").trim();
+    };
+    reconhecimento.onerror = (evento) => {
+      erroDeVoz = evento.error;
+    };
+    reconhecimento.onend = () => {
+      escuta = null;
+      marcarEscuta(false);
+      if (ouvido) {
+        $("assistente-texto").value = ouvido;
+        enviarFrase();
+      } else if (erroDeVoz !== "aborted") {
+        mostrar(aviso, fraseDoErroDeVoz(erroDeVoz || "no-speech"));
+      }
+    };
+
+    try {
+      reconhecimento.start();
+      escuta = reconhecimento;
+      marcarEscuta(true);
+      mostrar(aviso, "Ouvindo… fale o gasto.", "info");
+    } catch (_erro) {
+      mostrar(aviso, fraseDoErroDeVoz());
+    }
   }
 
   function enviarFrase() {

@@ -117,6 +117,24 @@ input[type="date"] { color-scheme: dark; }
 
 button:focus-visible, summary:focus-visible { outline: 3px solid var(--amarelo); outline-offset: 2px; }
 
+/* Campo do assistente com o microfone ao lado */
+.linha-campo { display: flex; gap: 8px; }
+.linha-campo input { flex: 1; min-width: 0; }
+.botao-microfone {
+  flex: 0 0 48px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--borda);
+  background: #0b1638;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.botao-microfone[aria-pressed="true"] {
+  background: var(--grena);
+  border-color: var(--amarelo);
+}
+.dica { margin: 8px 0 0; font-size: 0.9rem; color: var(--texto-suave); }
+
 .linha-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .linha-botoes .botao { margin-top: 12px; }
 

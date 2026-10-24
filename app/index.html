@@ -90,7 +90,11 @@
     <section class="cartao assistente">
       <h2>Assistente</h2>
       <label for="assistente-texto">Conte o gasto numa frase</label>
-      <input id="assistente-texto" type="text" autocomplete="off" placeholder="Ex.: paguei a Vivo hoje">
+      <div class="linha-campo">
+        <input id="assistente-texto" type="text" autocomplete="off" placeholder="Ex.: paguei a Vivo hoje">
+        <button type="button" id="botao-microfone" class="botao-microfone" aria-label="Falar o gasto" aria-pressed="false">🎤</button>
+      </div>
+      <p id="dica-microfone" class="dica" hidden>Use o microfone do teclado do celular.</p>
       <div class="linha-botoes">
         <button type="button" id="botao-enviar" class="botao principal">Enviar</button>
         <button type="button" id="botao-foto" class="botao secundario">Foto do cupom</button>
